@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Chat App</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="max-w-md mx-auto mt-10 p-4 bg-gray-100 rounded-lg shadow-lg">
+    <h1 class="text-2xl font-bold text-center mb-4">Simple Chat</h1>
+    <div class="mb-4">
+      <input
+        type="text"
+        id="username"
+        placeholder="Foydalanuvchi nomi"
+        class="w-full p-2 mb-2 border rounded"
+      />
+      <div id="messages" class="h-64 overflow-y-auto border p-2 mb-2 bg-white rounded"></div>
+      <div class="flex">
+        <input
+          type="text"
+          id="message"
+          placeholder="Xabar yozing..."
+          class="flex-1 p-2 border rounded-l"
+        />
+        <button
+          onclick="sendMessage()"
+          class="bg-blue-500 text-white p-2 rounded-r hover:bg-blue-600"
+        >
+          Yuborish
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const socket = io();
+
+    function sendMessage() {
+      const username = document.getElementById('username').value || 'Guest';
+      const message = document.getElementById('message').value;
+      if (message.trim()) {
+        socket.emit('chatMessage', { username, text: message, timestamp: Date.now() });
+        document.getElementById('message').value = '';
+      }
+    }
+
+    // Eski xabarlarni yuklash
+    socket.on('loadMessages', (messages) => {
+      const messagesDiv = document.getElementById('messages');
+      messagesDiv.innerHTML = ''; // Oldingi xabarlarni tozalash
+      messages.forEach((msg) => {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'mb-2';
+        messageElement.innerHTML = `<span class="font-bold">${msg.username}: </span>${msg.text} <span class="text-xs text-gray-500 ml-2">${new Date(msg.timestamp).toLocaleTimeString()}</span>`;
+        messagesDiv.appendChild(messageElement);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    // Yangi xabar qabul qilish
+    socket.on('chatMessage', (data) => {
+      const messagesDiv = document.getElementById('messages');
+      const messageElement = document.createElement('div');
+      messageElement.className = 'mb-2';
+      messageElement.innerHTML = `<span class="font-bold">${data.username}: </span>${data.text} <span class="text-xs text-gray-500 ml-2">${new Date(data.timestamp).toLocaleTimeString()}</span>`;
+      messagesDiv.appendChild(messageElement);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+  </script>
+</body>
+</html>

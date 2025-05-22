@@ -1,0 +1,14 @@
+{
+  "name": "chat-app",
+  "version": "1.0.0",
+  "description": "Simple real-time chat app with SQLite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.5",
+    "sqlite3": "^5.1.7"
+  }
+}
