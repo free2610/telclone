@@ -37,38 +37,56 @@
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script>
     const socket = io();
+    const usernameInput = document.getElementById('username');
+    const messageInput = document.getElementById('message');
+    const messagesDiv = document.getElementById('messages');
 
     function sendMessage() {
-      const username = document.getElementById('username').value || 'Guest';
-      const message = document.getElementById('message').value;
-      if (message.trim()) {
-        socket.emit('chatMessage', { username, text: message, timestamp: Date.now() });
-        document.getElementById('message').value = '';
+      const username = usernameInput.value || 'Guest';
+      const text = messageInput.value;
+      if (text.trim()) {
+        socket.emit('chatMessage', { username, text, timestamp: Date.now() });
+        messageInput.value = '';
       }
     }
 
-    // Eski xabarlarni yuklash
+    function deleteMessage(messageId) {
+      socket.emit('deleteMessage', messageId);
+    }
+
     socket.on('loadMessages', (messages) => {
-      const messagesDiv = document.getElementById('messages');
-      messagesDiv.innerHTML = ''; // Oldingi xabarlarni tozalash
-      messages.forEach((msg) => {
-        const messageElement = document.createElement('div');
-        messageElement.className = 'mb-2';
-        messageElement.innerHTML = `<span class="font-bold">${msg.username}: </span>${msg.text} <span class="text-xs text-gray-500 ml-2">${new Date(msg.timestamp).toLocaleTimeString()}</span>`;
-        messagesDiv.appendChild(messageElement);
-      });
+      messagesDiv.innerHTML = '';
+      messages.forEach(msg => addMessage(msg));
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
-    // Yangi xabar qabul qilish
-    socket.on('chatMessage', (data) => {
-      const messagesDiv = document.getElementById('messages');
-      const messageElement = document.createElement('div');
-      messageElement.className = 'mb-2';
-      messageElement.innerHTML = `<span class="font-bold">${data.username}: </span>${data.text} <span class="text-xs text-gray-500 ml-2">${new Date(data.timestamp).toLocaleTimeString()}</span>`;
-      messagesDiv.appendChild(messageElement);
+    socket.on('chatMessage', (msg) => {
+      addMessage(msg);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
+
+    socket.on('messageDeleted', (messageId) => {
+      const messageElement = document.getElementById(`message-${messageId}`);
+      if (messageElement) {
+        messageElement.remove();
+      }
+    });
+
+    function addMessage(msg) {
+      const messageElement = document.createElement('div');
+      messageElement.id = `message-${msg.id}`;
+      messageElement.className = 'mb-2 flex justify-between items-start';
+      const content = `<span class="font-bold">${msg.username}: </span>${msg.text} <span class="text-xs text-gray-500 ml-2">${new Date(msg.timestamp).toLocaleTimeString()}</span>`;
+      messageElement.innerHTML = content;
+      if (msg.socketId === socket.id) {
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'text-red-500 text-sm hover:text-red-700';
+        deleteButton.innerText = 'O\'chirish';
+        deleteButton.onclick = () => deleteMessage(msg.id);
+        messageElement.appendChild(deleteButton);
+      }
+      messagesDiv.appendChild(messageElement);
+    }
   </script>
 </body>
 </html>
